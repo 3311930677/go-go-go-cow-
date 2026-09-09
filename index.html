@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>牛走 CRAZY COW — BUG 就是特性</title>
+<style>
+  :root {
+    --paper: #f4ecd7;
+    --paper-2: #ece1c6;
+    --ink: #23211c;
+    --ink-soft: #4c4637;
+    --seal: #c0392b;
+    --seal-dark: #a52e22;
+    --mountain: #6f6a5d;
+    --gold: #b98a2f;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: "KaiTi", "STKaiti", "楷体", "STSong", "SimSun", serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  .container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- 顶部导航 ---------- */
+  header {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(244, 236, 215, .88);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(35, 33, 28, .1);
+  }
+  .nav {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+  }
+  .brand { font-size: 22px; font-weight: bold; letter-spacing: 2px; }
+  .brand .seal-dot {
+    display: inline-block; width: 26px; height: 26px; line-height: 25px;
+    text-align: center; background: var(--seal); color: #fff;
+    border-radius: 6px; margin-right: 8px; font-size: 16px;
+  }
+  .nav-links { display: flex; gap: 26px; }
+  .nav-links a {
+    color: var(--ink-soft); text-decoration: none; font-size: 15px;
+    letter-spacing: 1px;
+  }
+  .nav-links a:hover { color: var(--seal); }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative; overflow: hidden;
+    padding: 90px 0 110px;
+    background:
+      radial-gradient(120% 90% at 50% 0%, #fff9ea 0%, transparent 55%),
+      linear-gradient(180deg, #faf3e0 0%, var(--paper) 100%);
+  }
+  .hero-bg {
+    position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  }
+  .hero-inner { position: relative; z-index: 2; text-align: center; }
+
+  .stamp {
+    display: inline-block; padding: 4px 18px;
+    border: 2px solid var(--seal); color: var(--seal);
+    font-size: 14px; letter-spacing: 4px; border-radius: 4px;
+    margin-bottom: 26px;
+  }
+
+  h1.title {
+    font-size: clamp(60px, 12vw, 132px);
+    line-height: 1; letter-spacing: 10px; font-weight: bold;
+    margin-bottom: 8px;
+    text-shadow: 0 3px 0 rgba(35,33,28,.05);
+  }
+  .subtitle-en {
+    font-family: "Georgia", "Times New Roman", serif;
+    letter-spacing: 5px; color: var(--ink-soft); font-size: 15px;
+    margin-bottom: 26px;
+  }
+  .tagline {
+    font-size: clamp(18px, 3vw, 24px); color: var(--ink-soft);
+    max-width: 640px; margin: 0 auto 36px;
+  }
+  .tagline .bug { color: var(--seal); font-weight: bold; }
+
+  .download-group { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 15px 34px; border-radius: 999px; text-decoration: none;
+    font-size: 18px; letter-spacing: 2px; font-weight: bold;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary {
+    background: var(--seal); color: #fff;
+    box-shadow: 0 8px 24px rgba(192, 57, 43, .35);
+  }
+  .btn-primary:hover { background: var(--seal-dark); box-shadow: 0 10px 30px rgba(192, 57, 43, .45); }
+  .btn-ghost {
+    border: 2px solid var(--ink); color: var(--ink); background: transparent;
+  }
+  .btn-ghost:hover { background: var(--ink); color: #fff; }
+  .btn .size { font-weight: normal; font-size: 13px; opacity: .72; }
+  .platform-hint { margin-top: 16px; font-size: 13px; color: var(--ink-soft); letter-spacing: 1px; }
+  .hero-art {
+    display: block; max-width: 760px; width: 100%;
+    margin: 4px auto 32px;
+    border-radius: 18px;
+    border: 6px solid rgba(255,255,255,.65);
+    box-shadow: 0 18px 50px rgba(35,33,28,.2);
+  }
+
+  /* ---------- 通用 section ---------- */
+  section { padding: 70px 0; }
+  .section-head { text-align: center; margin-bottom: 48px; }
+  .section-head h2 {
+    font-size: clamp(28px, 5vw, 44px); letter-spacing: 6px; margin-bottom: 10px;
+  }
+  .section-head .en {
+    font-family: "Georgia", serif; font-size: 13px; letter-spacing: 3px; color: var(--ink-soft);
+  }
+  .divider {
+    width: 56px; height: 3px; background: var(--seal); margin: 14px auto 0;
+  }
+
+  /* ---------- 特色 ---------- */
+  .features { background: var(--paper-2); }
+  .grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+  }
+  .card {
+    background: #fbf6e9; border: 1px solid rgba(35,33,28,.08);
+    border-radius: 14px; padding: 28px 24px;
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 14px 34px rgba(35,33,28,.1); }
+  .card .icon {
+    width: 46px; height: 46px; border-radius: 12px;
+    background: rgba(192,57,43,.1); color: var(--seal);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; margin-bottom: 18px;
+  }
+  .card h3 { font-size: 21px; letter-spacing: 2px; margin-bottom: 10px; }
+  .card p { font-size: 15px; color: var(--ink-soft); }
+
+  /* ---------- 模式 ---------- */
+  .modes { background: linear-gradient(180deg, #f6eedd, #efe4c8); }
+  .mode-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .mode {
+    display: flex; gap: 18px; align-items: flex-start;
+    background: #fbf6e9; border-radius: 14px; padding: 24px;
+    border: 1px solid rgba(35,33,28,.08);
+  }
+  .mode .num {
+    font-family: "Georgia", serif; font-size: 34px; color: var(--seal);
+    line-height: 1; font-weight: bold;
+  }
+  .mode h3 { font-size: 22px; letter-spacing: 2px; margin-bottom: 6px; }
+  .mode p { font-size: 15px; color: var(--ink-soft); }
+
+  /* ---------- 下载 CTA ---------- */
+  .cta {
+    text-align: center; color: #f5eeda;
+    background: radial-gradient(120% 100% at 50% -20%, #4a4436 0%, #26231d 55%, #1b1915 100%);
+  }
+  .cta h2 { font-size: clamp(28px, 5vw, 44px); letter-spacing: 5px; margin-bottom: 14px; }
+  .cta p { color: rgba(245,238,218,.78); margin-bottom: 30px; }
+  .cta .btn-primary { box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+
+  /* ---------- 免责 ---------- */
+  .disclaimer {
+    background: var(--paper); text-align: center; padding: 46px 0 70px;
+  }
+  .disclaimer blockquote {
+    font-size: 16px; color: var(--ink-soft); max-width: 560px; margin: 0 auto 26px;
+    font-style: italic;
+  }
+  .disclaimer .punch { font-size: 20px; letter-spacing: 1px; font-weight: bold; }
+
+  /* ---------- footer ---------- */
+  footer {
+    border-top: 1px solid rgba(35,33,28,.1);
+    padding: 28px 0; text-align: center; font-size: 13px; color: var(--ink-soft);
+  }
+  footer a { color: var(--seal); text-decoration: none; }
+
+  /* ---------- 响应式 ---------- */
+  @media (max-width: 760px) {
+    .grid { grid-template-columns: 1fr; }
+    .mode-list { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+    .hero { padding: 60px 0 80px; }
+    section { padding: 50px 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container nav">
+    <div class="brand"><span class="seal-dot">牛</span>牛走</div>
+    <nav class="nav-links">
+      <a href="#features">特色</a>
+      <a href="#modes">玩法</a>
+      <a href="#download">下载</a>
+    </nav>
+  </div>
+</header>
+
+<!-- Hero -->
+<section class="hero">
+  <svg class="hero-bg" viewBox="0 0 1440 620" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <rect width="1440" height="620" fill="#faf3e0"/>
+    <!-- 白日 -->
+    <circle cx="1140" cy="120" r="70" fill="#c0392b" opacity="0.9"/>
+    <!-- 远山三层 -->
+    <path d="M0 430 L180 280 L340 430 Z" fill="#d8d0bd"/>
+    <path d="M240 430 L460 220 L700 430 Z" fill="#c9c0ab"/>
+    <path d="M560 430 L820 180 L1040 430 Z" fill="#b3aa94"/>
+    <path d="M900 430 L1120 260 L1360 430 Z" fill="#a59c86"/>
+    <path d="M1180 430 L1330 300 L1480 430 Z" fill="#968d78"/>
+    <!-- 飞鸟 -->
+    <g fill="none" stroke="#6f6a5d" stroke-width="2.5" stroke-linecap="round">
+      <path d="M250 150 q18 -16 36 0 q18 -16 36 0"/>
+      <path d="M420 190 q14 -12 28 0 q14 -12 28 0"/>
+      <path d="M330 240 q12 -10 24 0 q12 -10 24 0"/>
+    </g>
+  </svg>
+
+  <div class="container hero-inner">
+    <div class="stamp">耗时 N 年 · 两人团队手搓</div>
+    <h1 class="title">牛走</h1>
+    <div class="subtitle-en">CRAZY COW · 大梦哞哞</div>
+    <p class="tagline">
+      抽象派开放世界物理冒险 —— 操控一头建模粗糙的小牛。
+      <span class="bug">BUG 就是特性。</span>
+    </p>
+    <img class="hero-art" src="images/hero.jpg" alt="水墨远山中的荒诞方块牛">
+    <div class="download-group">
+      <a class="btn btn-primary" href="#download">立即下载 <span class="size">免费</span></a>
+      <a class="btn btn-ghost" href="#modes">看看怎么玩</a>
+    </div>
+    <p class="platform-hint">Windows 10 / 11 · 单文件 98.93 MB · 下载即玩</p>
+  </div>
+</section>
+
+<!-- 特色 -->
+<section class="features" id="features">
+  <div class="container">
+    <div class="section-head">
+      <h2>游戏特色</h2>
+      <div class="en">DESIGNED DEFECTS</div>
+      <div class="divider"></div>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <div class="icon">穿</div>
+        <h3>主动穿模</h3>
+        <p>穿过树、石头、墙，穿进隐藏区和金牛雕像合影。不是 BUG，是玩法。</p>
+      </div>
+      <div class="card">
+        <div class="icon">飞</div>
+        <h3>连跳飞天</h3>
+        <p>小牛在高空疯狂自转俯瞰草原，物理引擎看了都沉默。</p>
+      </div>
+      <div class="card">
+        <div class="icon">崩</div>
+        <h3>物理崩坏</h3>
+        <p>石头乱飞、树被撞上天、牛群原地转圈，草原没有一刻消停。</p>
+      </div>
+      <div class="card">
+        <div class="icon">哞</div>
+        <h3>荒诞任务</h3>
+        <p>帮半埋地下的云雀卡出地面，寻找悬浮在"水底"的毛蛋。</p>
+      </div>
+      <div class="card">
+        <div class="icon">联</div>
+        <h3>联机草原</h3>
+        <p>最多 16 头牛乱跑，头顶挂着"哞王""穿模侠""牛顿反对者"。</p>
+      </div>
+      <div class="card">
+        <div class="icon">梦</div>
+        <h3>梦境 &amp; 现实</h3>
+        <p>双重模式。现实里，你是一头站都站不稳的孱弱小牛。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 模式 -->
+<section class="modes" id="modes">
+  <div class="container">
+    <div class="section-head">
+      <h2>玩法模式</h2>
+      <div class="en">GAME MODES</div>
+      <div class="divider"></div>
+    </div>
+    <div class="mode-list">
+      <div class="mode">
+        <div class="num">01</div>
+        <div>
+          <h3>大逃杀</h3>
+          <p>圈越来越小，牛越来越疯。落地找武器，把别的牛顶飞出圈。</p>
+        </div>
+      </div>
+      <div class="mode">
+        <div class="num">02</div>
+        <div>
+          <h3>相扑</h3>
+          <p>一撞定胜负的牛之力比拼。撞飞对手，或者骗它自己下台。</p>
+        </div>
+      </div>
+      <div class="mode">
+        <div class="num">03</div>
+        <div>
+          <h3>天空竞速</h3>
+          <p>飞天夺环，冲刺计时。金环越窄，假环越坑。</p>
+        </div>
+      </div>
+      <div class="mode">
+        <div class="num">04</div>
+        <div>
+          <h3>生存</h3>
+          <p>躲避从天而降的陨石，小心会跟踪你的红色追踪陨石。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 下载 CTA -->
+<section class="cta" id="download">
+  <div class="container">
+    <h2>现在，牵走你的牛</h2>
+    <p>单文件 98.93 MB · Windows 10 / 11 · 无需安装依赖 · 下载即玩</p>
+    <div class="download-group">
+      <a class="btn btn-primary" href="牛走.exe" download>下载 Windows 版 <span class="size">98.93 MB</span></a>
+    </div>
+    <p class="platform-hint" style="color:rgba(245,238,218,.7)">若浏览器提示风险，请选择"保留"或"仍要下载"——这只是头粗糙的牛。</p>
+  </div>
+</section>
+
+<!-- 免责 -->
+<section class="disclaimer">
+  <div class="container">
+    <blockquote>
+      "本作画质灾难、动画僵硬、剧情毫无逻辑——这些都是刻意的设计（真的）。"
+    </blockquote>
+    <p class="punch">玩了后悔 86 分钟，不玩后悔一辈子。</p>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    《牛走 CRAZY COW》 · 二人团队手搓 · 开源子 <a href="https://github.com/3311930677/go-go-go-cow-" target="_blank" rel="noopener">GitHub</a>
+  </div>
+</footer>
+
+</body>
+</html>

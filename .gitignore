@@ -2,8 +2,9 @@
 .godot/
 /android/
 
-# Godot exports / builds
+# Godot exports / builds (保留 `牛走.exe` 作为发布供下载)
 *.exe
+!牛走.exe
 *.pck
 *.zip
 
