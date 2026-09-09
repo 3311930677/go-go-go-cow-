@@ -1,0 +1,25 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# Godot exports / builds
+*.exe
+*.pck
+*.zip
+
+# Deploy binaries
+deploy/godot_server
+deploy/Godot_linux.zip
+
+# Log files and test outputs
+*.txt
+tests/*.txt
+tests/srv_*
+tests/cb_*
+tests/client_b_*
+tests/tct_*
+tests/r*_out.txt
+tests/r*_err.txt
+
+# Backup files
+*.bak
